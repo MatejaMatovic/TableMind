@@ -15,7 +15,6 @@ export default function BookPage() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Učitaj restorane i rezervacije kad se stranica otvori
   useEffect(() => {
     fetchRestaurants();
     fetchReservations();
@@ -41,7 +40,7 @@ export default function BookPage() {
     }
   };
 
-  // Slanje forme
+  // 🟢 Kreiraj novu rezervaciju
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -55,7 +54,6 @@ export default function BookPage() {
       });
 
       const data = await res.json();
-
       if (!res.ok) throw new Error(data.message || "Neuspešno");
 
       setMessage("✅ Rezervacija uspešno napravljena!");
@@ -68,12 +66,32 @@ export default function BookPage() {
         time: "",
       });
 
-      fetchReservations(); // odmah osveži listu
+      fetchReservations(); // osveži listu
     } catch (err) {
       setMessage("❌ Greška pri pravljenju rezervacije");
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // 🔴 Obriši rezervaciju
+  const handleDelete = async (id) => {
+    if (!confirm("Da li sigurno želiš da obrišeš ovu rezervaciju?")) return;
+
+    try {
+      const res = await fetch(`/api/reservations/${id}`, {
+        method: "DELETE",
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+
+      setMessage("🗑️ Rezervacija obrisana.");
+      fetchReservations();
+    } catch (err) {
+      console.error("❌ Greška pri brisanju rezervacije:", err);
+      setMessage("❌ Greška pri brisanju.");
     }
   };
 
@@ -209,6 +227,21 @@ export default function BookPage() {
               👥 {r.partySize} osoba <br />
               🕓 {new Date(r.time).toLocaleString()} <br />
               🍽️ {r.restaurant?.name || "Nepoznat restoran"}
+              <br />
+              <button
+                onClick={() => handleDelete(r._id)}
+                style={{
+                  background: "red",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "5px",
+                  marginTop: "8px",
+                  padding: "5px 10px",
+                  cursor: "pointer",
+                }}
+              >
+                🗑️ Obriši
+              </button>
             </li>
           ))}
         </ul>
@@ -216,3 +249,4 @@ export default function BookPage() {
     </div>
   );
 }
+
