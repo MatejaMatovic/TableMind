@@ -3,7 +3,6 @@ import User from "@/models/User";
 import bcrypt from "bcryptjs";
 
 export default async function handler(req, res) {
-  // Dozvoljavamo samo POST
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
@@ -14,12 +13,12 @@ export default async function handler(req, res) {
     const { name, email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ error: "Email i lozinka su obavezni." });
+      return res.status(400).json({ error: "Email i lozinka su obavezni" });
     }
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({ error: "Korisnik već postoji." });
+      return res.status(400).json({ error: "Korisnik već postoji" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -30,9 +29,9 @@ export default async function handler(req, res) {
       password: hashedPassword,
     });
 
-    // ✅ Uvek vrati JSON kao odgovor!
+    // ✅ Ovde je ključni deo — uvek vraća JSON!
     return res.status(201).json({
-      message: "Registracija uspešna.",
+      message: "Registracija uspešna",
       user: {
         id: newUser._id,
         name: newUser.name,
@@ -41,8 +40,6 @@ export default async function handler(req, res) {
     });
   } catch (error) {
     console.error("Signup error:", error);
-    return res.status(500).json({
-      error: error.message || "Greška na serveru",
-    });
+    return res.status(500).json({ error: error.message || "Server error" });
   }
 }
