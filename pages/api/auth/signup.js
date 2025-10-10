@@ -1,54 +1,41 @@
-// ✅ pages/api/auth/signup.js
-import connectDB from "@/lib/mongodb";
+// pages/api/auth/signup.js
+import dbConnect from "@/lib/mongodb";
 import User from "@/models/User";
 import bcrypt from "bcryptjs";
 
 export default async function handler(req, res) {
-  // Dozvoli samo POST
   if (req.method !== "POST") {
-    return res.status(405).json({ success: false, error: "Method not allowed" });
+    return res.status(405).json({ error: "Method not allowed" });
   }
 
   try {
-    // ✅ Poveži se sa bazom
-    await connectDB();
+    await dbConnect();
 
-    // ✅ Sigurno parsiranje body-a
-    const { name, email, password } = req.body || {};
+    const { name, email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ success: false, error: "Email i lozinka su obavezni." });
+      return res.status(400).json({ error: "Email i lozinka su obavezni" });
     }
 
-    // ✅ Proveri da li korisnik postoji
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({ success: false, error: "Korisnik već postoji." });
+      return res.status(400).json({ error: "Korisnik već postoji" });
     }
 
-    // ✅ Hesiraj lozinku
     const hashedPassword = await bcrypt.hash(password, 10);
+    const newUser = new User({ name, email, password: hashedPassword });
+    await newUser.save();
 
-    // ✅ Kreiraj novog korisnika
-    const newUser = await User.create({
-      name: name || "Novi korisnik",
-      email,
-      password: hashedPassword,
-    });
-
-    // ✅ Vrati JSON odgovor
     return res.status(201).json({
       success: true,
-      message: "Registracija uspešna!",
-      user: { id: newUser._id, name: newUser.name, email: newUser.email },
+      message: "Registracija uspešna",
+      user: { name, email },
     });
   } catch (error) {
-    console.error("❌ Signup API error:", error);
-
-    // Uvek vraćaj JSON — i ako ima grešku
+    console.error("Signup error:", error);
     return res.status(500).json({
       success: false,
-      error: error.message || "Došlo je do greške na serveru.",
+      error: error.message || "Greška na serveru",
     });
   }
 }
