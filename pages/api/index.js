@@ -3,8 +3,8 @@
  * GET, POST, PUT, DELETE
  */
 
-import connectDB from '../../../lib/mongodb';
-import Schedule from '../../../models/Schedule';
+import connectDB from '../../lib/mongodb';
+import Schedule from '../../models/Schedule';
 
 export default async function handler(req, res) {
   await connectDB();
