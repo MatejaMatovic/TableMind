@@ -4,44 +4,51 @@ import User from "@/models/User";
 import bcrypt from "bcryptjs";
 
 export default async function handler(req, res) {
+  // Dozvoli samo POST
   if (req.method !== "POST") {
-    return res.status(405).json({ message: "Method not allowed" });
+    return res.status(405).json({ success: false, error: "Method not allowed" });
   }
 
   try {
+    // ✅ Poveži se sa bazom
     await connectDB();
 
-    const { name, email, password } = req.body;
+    // ✅ Sigurno parsiranje body-a
+    const { name, email, password } = req.body || {};
 
     if (!email || !password) {
-      return res.status(400).json({ error: "Email i lozinka su obavezni." });
+      return res.status(400).json({ success: false, error: "Email i lozinka su obavezni." });
     }
 
-    const existing = await User.findOne({ email });
-    if (existing) {
-      return res.status(400).json({ error: "Korisnik sa tim emailom već postoji." });
+    // ✅ Proveri da li korisnik postoji
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ success: false, error: "Korisnik već postoji." });
     }
 
+    // ✅ Hesiraj lozinku
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const newUser = new User({
+    // ✅ Kreiraj novog korisnika
+    const newUser = await User.create({
       name: name || "Novi korisnik",
       email,
       password: hashedPassword,
     });
 
-    await newUser.save();
-
+    // ✅ Vrati JSON odgovor
     return res.status(201).json({
       success: true,
-      message: "✅ Registracija uspešna",
-      user: { name: newUser.name, email: newUser.email },
+      message: "Registracija uspešna!",
+      user: { id: newUser._id, name: newUser.name, email: newUser.email },
     });
   } catch (error) {
-    console.error("❌ Signup error:", error);
+    console.error("❌ Signup API error:", error);
+
+    // Uvek vraćaj JSON — i ako ima grešku
     return res.status(500).json({
       success: false,
-      error: "Greška na serveru: " + error.message,
+      error: error.message || "Došlo je do greške na serveru.",
     });
   }
 }
